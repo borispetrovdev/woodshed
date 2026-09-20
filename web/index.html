@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Woodshed</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <button id="title" title="Open another song (o)">Woodshed</button>
+    <label class="key" title="The song's key, so you remember what the numbers are relative to. Just a note to yourself — type e.g. Bb or F#m.">key: 1 = <input id="key" size="3" placeholder="?" spellcheck="false"></label>
+    <span id="status"></span>
+    <span class="spacer"></span>
+    <button id="loop-readout" class="readout" title="Turn looping on/off (l)" hidden></button>
+    <span id="speed-readout" class="readout">100%</span>
+    <span id="position-readout" class="readout">bar –</span>
+  </header>
+
+  <canvas id="overview"></canvas>
+  <div id="timeline-wrap">
+    <canvas id="timeline"></canvas>
+    <input id="label-editor" spellcheck="false" autocomplete="off" hidden>
+  </div>
+
+  <footer>
+    <span><kbd>space</kbd> play</span>
+    <span><kbd>←</kbd><kbd>→</kbd> beat · <kbd>⇧</kbd> bar · <kbd>⌥</kbd> transient</span>
+    <span><kbd>[</kbd><kbd>]</kbd> loop in/out (same modifiers) · <kbd>l</kbd> on/off · <kbd>,</kbd><kbd>.</kbd> shift · <kbd>&lt;</kbd><kbd>&gt;</kbd> halve/double · <kbd>r</kbd> restart</span>
+    <span><kbd>-</kbd><kbd>=</kbd> speed · <kbd>0</kbd> 100%</span>
+    <span><kbd>1</kbd>–<kbd>7</kbd> or <kbd>↵</kbd> label this beat · while typing a label: <kbd>tab</kbd> saves it and moves on to the next bar · click a label to edit · <kbd>⌫</kbd> delete · <kbd>⌘Z</kbd> undo</span>
+    <span><kbd>↑</kbd><kbd>↓</kbd> or pinch to zoom · two-finger swipe to look around · <kbd>d</kbd> downbeat here · <kbd>m</kbd> meter · <kbd>g</kbd> grab Spotify · <kbd>o</kbd> songs</span>
+  </footer>
+
+  <dialog id="songs"><h2>Songs</h2><ul id="song-list"></ul><form id="url-form"><input id="url" placeholder="…or paste a YouTube URL" size="40"><button>Grab</button></form></dialog>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
