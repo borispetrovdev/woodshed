@@ -1,7 +1,7 @@
 # Woodshed
 
-A Mac app for learning songs by ear. Press one hotkey while Spotify is playing and the song
-opens in a player that has already found its beats and bars. Then:
+A Mac app for learning songs by ear. Press one hotkey while Spotify is playing — or paste a
+YouTube link — and the song opens in a player that has already found its beats and bars. Then:
 
 - **step back** a beat, a bar, or a transient — no seek handle;
 - **loop a section** with the loop points snapped exactly to the grid;
@@ -20,7 +20,7 @@ so you build the app yourself. It takes one command and a few minutes.
 
 You need:
 
-- an Apple Silicon Mac running macOS 13 or later, with Spotify installed;
+- an Apple Silicon Mac running macOS 13 or later;
 - Xcode or the Xcode Command Line Tools (`xcode-select --install`);
 - [uv](https://docs.astral.sh/uv/) (`brew install uv` or `curl -LsSf https://astral.sh/uv/install.sh | sh`).
 
@@ -36,14 +36,17 @@ The first build downloads the beat-tracking model's dependencies (PyTorch, ~1 GB
 used to export the model) and takes several minutes; later builds take about 90 seconds. The
 result is `build/Woodshed.app` — drag it into `/Applications` and open it.
 
-The first time you press the hotkey, macOS asks whether Woodshed may control Spotify. Say yes:
-that is how it learns which song is playing.
-
 ## Using it
 
-Play a song in Spotify. Press **⌃⌥⌘W** (from any app). Woodshed pauses Spotify, fetches the
-song, opens it at the same spot, and finds the beats in the background (about 20 seconds; you
-can play and slow down straight away). The next grab of the same song is instant.
+Two ways in:
+
+- **From Spotify:** play a song, press **⌃⌥⌘W** (from any app). Woodshed pauses Spotify,
+  fetches the song and opens it at the same spot. The first time, macOS asks whether Woodshed
+  may control Spotify — say yes; that is how it learns which song is playing.
+- **From a link:** press `o`, paste a YouTube URL. No Spotify needed.
+
+Either way it finds the beats in the background (about 20 seconds; you can play and slow down
+straight away), and opening the same song again is instant.
 
 | keys | |
 |---|---|
