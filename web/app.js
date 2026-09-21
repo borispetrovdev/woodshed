@@ -29,13 +29,31 @@ window.addEventListener('unhandledrejection', event => reportToLog(`unhandled re
 
 // ---------- audio engine ----------
 
-let audioContext = null, stretch = null;
+let audioContext = null, stretch = null, volumeNode = null;
+
+// Volume is an app-wide preference, not a per-song note. The slider position is squared into
+// gain so that equal slider steps sound like roughly equal loudness steps.
+const VOLUME_STEP = 0.05;
+let volume = 1, volumeBeforeMute = 1, volumeSaveTimer = null;
+
+function setVolume(value, { save = true } = {}) {
+  volume = Math.round(Math.min(Math.max(value, 0), 1) * 100) / 100;
+  volumeNode?.gain.setTargetAtTime(volume * volume, audioContext.currentTime, 0.015);  // short ramp: no zipper noise
+  $('volume').value = String(volume);
+  $('volume-icon').textContent = volume === 0 ? '🔇' : volume < 0.5 ? '🔉' : '🔊';
+  if (!save) return;
+  clearTimeout(volumeSaveTimer);
+  volumeSaveTimer = setTimeout(() => fetch('/api/settings', { method: 'PUT', body: JSON.stringify({ volume }) }), 300);
+}
 
 async function ensureEngine() {
   if (stretch) return;
   audioContext = new AudioContext();
   stretch = await SignalsmithStretch(audioContext);
-  stretch.connect(audioContext.destination);
+  volumeNode = audioContext.createGain();
+  stretch.connect(volumeNode).connect(audioContext.destination);
+  const settings = await (await fetch('/api/settings')).json();
+  setVolume(settings.volume, { save: false });
   stretch.setUpdateInterval(0.02, receiveEngineTime);
   state.latencyCompensation = (await stretch.latency()) + (audioContext.outputLatency || 0);
   reportToLog(`audio engine ready: ${audioContext.sampleRate} Hz, context ${audioContext.state}, latency ${state.latencyCompensation.toFixed(3)}s`);
@@ -672,6 +690,10 @@ for (const canvas of [timeline, overview]) {
 overview.addEventListener('mousedown', event => { if (state.notes) seek(snap((event.offsetX / overview.clientWidth) * state.duration, 'beat')); });
 
 $('title').onclick = openSongList;
+$('volume').addEventListener('input', () => setVolume(Number($('volume').value)));
+$('volume').addEventListener('change', () => $('volume').blur());  // or the arrow keys would keep driving the slider
+$('volume').addEventListener('keydown', event => event.preventDefault());
+$('volume-icon').onclick = () => setVolume(volume === 0 ? (volumeBeforeMute || 1) : ((volumeBeforeMute = volume), 0));
 $('loop-readout').onclick = toggleLoop;
 $('key').addEventListener('input', () => { state.notes.key = $('key').value.trim(); saveNotesSoon(); });
 $('key').addEventListener('keydown', event => { event.stopPropagation(); if (event.key === 'Enter' || event.key === 'Escape') $('key').blur(); });
@@ -692,8 +714,8 @@ window.addEventListener('keydown', event => {
   const handlers = {
     ' ': () => (state.playing ? pause() : play()),
     ArrowLeft: () => step(-1, unit), ArrowRight: () => step(1, unit),
-    ArrowUp: () => setZoom(state.pixelsPerSecond * 1.25),
-    ArrowDown: () => setZoom(state.pixelsPerSecond / 1.25),
+    ArrowUp: () => (event.shiftKey ? setVolume(volume + VOLUME_STEP) : setZoom(state.pixelsPerSecond * 1.25)),
+    ArrowDown: () => (event.shiftKey ? setVolume(volume - VOLUME_STEP) : setZoom(state.pixelsPerSecond / 1.25)),
     l: toggleLoop,
     ',': () => reshapeLoop({ shiftBy: -1 }), '.': () => reshapeLoop({ shiftBy: 1 }),
     '<': () => reshapeLoop({ scaleBy: 0.5 }), '>': () => reshapeLoop({ scaleBy: 2 }),

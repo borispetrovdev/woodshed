@@ -3,6 +3,7 @@ import pytest
 
 from woodshed import library
 from woodshed.server import parse_notes
+from woodshed.settings import Settings
 
 
 @pytest.mark.parametrize("song_id", ["../escape", "../../etc/passwd", "nested/../../escape"])
@@ -28,3 +29,14 @@ def test_notes_with_malformed_loop_are_rejected() -> None:
 def test_notes_round_trip_a_loop() -> None:
     notes = parse_notes({"speed": 0.6, "loop": {"start_seconds": 1.0, "end_seconds": 2.0, "enabled": True}})
     assert notes.loop == library.LoopRegion(1.0, 2.0, True)
+
+
+@pytest.mark.parametrize("volume", [-0.1, 1.5, "loud", None, True])
+def test_out_of_range_or_non_numeric_volume_is_rejected(volume: object) -> None:
+    with pytest.raises(ValueError):
+        Settings(volume=volume)  # type: ignore[arg-type]  # deliberately wrong types: this is what arrives from JSON
+
+
+def test_unknown_settings_are_rejected() -> None:
+    with pytest.raises(TypeError):
+        Settings(**{"brightness": 3})  # type: ignore[arg-type]  # deliberately unknown field

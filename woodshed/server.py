@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import TypedDict
 from urllib.parse import unquote, urlparse
 
-from woodshed import analysis, fetch, library
+from woodshed import analysis, fetch, library, settings
 from woodshed.resources import MODEL_PATH, WEB_DIRECTORY
 
 DEFAULT_PORT = 8377
@@ -73,7 +73,9 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self) -> None:
         parts = self._path_parts()
         try:
-            if parts == ["api", "songs"]:
+            if parts == ["api", "settings"]:
+                self._send_json(asdict(settings.load_settings()))
+            elif parts == ["api", "songs"]:
                 self._send_json(library.list_song_ids())
             elif len(parts) == 3 and parts[:2] == ["api", "songs"]:
                 self._send_song(parts[2])
@@ -86,11 +88,15 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_PUT(self) -> None:
         parts = self._path_parts()
-        if len(parts) != 4 or parts[:2] != ["api", "songs"] or parts[3] != "notes":
+        is_settings = parts == ["api", "settings"]
+        if not is_settings and (len(parts) != 4 or parts[:2] != ["api", "songs"] or parts[3] != "notes"):
             self._send_json({"error": "not found"}, HTTPStatus.NOT_FOUND)
             return
         try:
-            library.save_notes(parts[2], parse_notes(self._read_json()))
+            if is_settings:
+                settings.save_settings(settings.Settings(**self._read_json()))  # type: ignore[arg-type]  # Settings validates its own fields
+            else:
+                library.save_notes(parts[2], parse_notes(self._read_json()))
         except (ValueError, TypeError) as error:
             self._send_json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
             return

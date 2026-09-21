@@ -1,4 +1,4 @@
-# woodshed
+# Woodshed
 
 Local practice player: grab whatever Spotify is playing, loop it on the beat grid, slow it
 down, and label it in numbers. No projects, no saving — everything autosaves next to the audio
@@ -52,3 +52,9 @@ Tests: `uv run pytest`.
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) and [ONNX Runtime](https://onnxruntime.ai) — bundled into the app by PyInstaller.
 
 Downloading audio from YouTube may be against its terms of service; this is a personal practice tool — use it on music you have the right to use.
+
+## Status
+
+Works on the Mac it was built on. The DMG is ad-hoc signed, so there is no download for other
+Macs yet — build from source with `scripts/build_app.sh` (Apple Silicon, Xcode command line
+tools and [uv](https://docs.astral.sh/uv/)). MIT licensed.
