@@ -7,6 +7,17 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+for tool in uv swiftc iconutil codesign hdiutil; do
+  command -v "$tool" >/dev/null || {
+    case $tool in
+      uv) echo "uv is not installed: brew install uv   (or: curl -LsSf https://astral.sh/uv/install.sh | sh)" >&2 ;;
+      *)  echo "$tool is missing: install the Xcode Command Line Tools with: xcode-select --install" >&2 ;;
+    esac
+    exit 1
+  }
+done
+[[ "$(uname -m)" == "arm64" ]] || { echo "Woodshed builds for Apple Silicon only (this Mac is $(uname -m))." >&2; exit 1; }
+
 VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml)
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 APP="build/Woodshed.app"
@@ -67,4 +78,6 @@ rm -rf "$STAGING"
 [[ "$SIGN_IDENTITY" == "-" ]] || codesign --timestamp -s "$SIGN_IDENTITY" "$DMG"
 
 du -sh "$APP" "$DMG"
-echo "Done. Ad-hoc builds run on this Mac; for other Macs sign with a Developer ID and run scripts/notarize.sh."
+echo
+echo "Built $APP — drag it into /Applications and open it."
+[[ "$SIGN_IDENTITY" == "-" ]] && echo "(Ad-hoc signed: runs on this Mac only. For other Macs, sign with a Developer ID and run scripts/notarize.sh.)"

@@ -1,49 +1,89 @@
 # Woodshed
 
-Local practice player: grab whatever Spotify is playing, loop it on the beat grid, slow it
-down, and label it in numbers. No projects, no saving — everything autosaves next to the audio
-in `~/Music/Woodshed/`.
+A Mac app for learning songs by ear. Press one hotkey while Spotify is playing and the song
+opens in a player that has already found its beats and bars. Then:
 
-    woodshed            # grab the current Spotify track and open it (bind this to a hotkey)
-    woodshed <url>      # grab a YouTube URL instead
-    woodshed --open     # just open the player
+- **step back** a beat, a bar, or a transient — no seek handle;
+- **loop a section** with the loop points snapped exactly to the grid;
+- **slow it down** without changing pitch;
+- **label the timeline in Nashville numbers** — `1`, `4`, `6m`, `b7` — as you work the chords out.
 
-The server (http://127.0.0.1:8377) starts itself on first use; logs go to `~/Library/Logs/woodshed.log`.
+No projects, no Save button. Everything autosaves next to the audio. It is deliberately not a
+DAW: hands stay on the instrument.
+
+Personal tool, shared as-is. Apple Silicon Macs only. MIT.
+
+## Get started
+
+There is no downloadable installer yet (the build is only signed for the Mac that made it),
+so you build the app yourself. It takes one command and a few minutes.
+
+You need:
+
+- an Apple Silicon Mac running macOS 13 or later, with Spotify installed;
+- Xcode or the Xcode Command Line Tools (`xcode-select --install`);
+- [uv](https://docs.astral.sh/uv/) (`brew install uv` or `curl -LsSf https://astral.sh/uv/install.sh | sh`).
+
+Then:
+
+```bash
+git clone https://github.com/borispetrovdev/woodshed.git
+cd woodshed
+scripts/build_app.sh
+```
+
+The first build downloads the beat-tracking model's dependencies (PyTorch, ~1 GB, only ever
+used to export the model) and takes several minutes; later builds take about 90 seconds. The
+result is `build/Woodshed.app` — drag it into `/Applications` and open it.
+
+The first time you press the hotkey, macOS asks whether Woodshed may control Spotify. Say yes:
+that is how it learns which song is playing.
+
+## Using it
+
+Play a song in Spotify. Press **⌃⌥⌘W** (from any app). Woodshed pauses Spotify, fetches the
+song, opens it at the same spot, and finds the beats in the background (about 20 seconds; you
+can play and slow down straight away). The next grab of the same song is instant.
 
 | keys | |
 |---|---|
 | `space` | play / pause |
 | `←` `→` | back / forward one beat — hold `⇧` for a bar, `⌥` for a transient |
-| `[` `]` | loop in / out at the nearest beat (same modifiers); `l` toggles, `r` restarts |
+| `[` `]` | loop in / out at the nearest beat (same modifiers); `l` toggles the loop, `r` restarts it |
 | `,` `.` / `<` `>` | slide the loop by its own length / halve or double it |
-| `-` `=` `0` | speed down / up 5% / back to 100% (pitch is preserved) |
-| `1`–`7`, `b`, `#` or `↵` | label the current beat; in the editor `tab` = next bar, `⌥→` = next beat |
-| `d`, `m` | "the downbeat is here" / cycle beats per bar, when the detected bars are wrong |
-| `↑` `↓` | zoom · `g` grab from Spotify · `o` song list |
+| `-` `=` `0` | speed down / up 5% / back to 100% |
+| `1`–`7`, `b`, `#` or `↵` | label the current beat; `tab` saves and moves to the next bar; click a label to edit; `⌫` deletes |
+| `⌘Z` `⇧⌘Z` | undo / redo labels and loops |
+| `d`, `m` | the downbeat is here / cycle beats per bar — for when the detected bars are wrong |
+| `↑` `↓` or pinch | zoom; two-finger swipe scrolls; `⇧↑` `⇧↓` volume |
+| `g`, `o` | grab from Spotify / open the song list (also takes a YouTube URL) |
 
 Mouse: click to seek, drag to loop — both snap with the same modifiers.
 
-Per song, `X.m4a` is the audio, `X.analysis.json` is machine-made (delete to re-analyze) and
-`X.notes.json` is yours (labels, loop, speed, key).
+`woodshed://grab` and `woodshed://grab?url=<youtube url>` do the same as the hotkey, for
+launchers like Raycast, Alfred or Keyboard Maestro.
 
-## The Mac app
+Songs live in `~/Music/Woodshed/`: `X.m4a` is the audio, `X.analysis.json` the detected grid
+(delete it to re-analyze), `X.notes.json` your labels, loop, speed and position. Logs go to
+`~/Library/Logs/Woodshed.log`.
 
-    scripts/build_app.sh        # → build/Woodshed.app and build/Woodshed-<version>.dmg
+## Hacking on it
 
-Woodshed.app is a small Swift window (`shell/main.swift`) around the same player UI, with the
-Python server frozen by PyInstaller inside it. It needs nothing installed: no Python, Homebrew,
-ffmpeg or yt-dlp (decoding and remuxing use macOS's own `afconvert`; the beat tracker runs on
-ONNX Runtime). In the app, `⌃⌥⌘W` from anywhere grabs the current Spotify track, as does opening
-`woodshed://grab` (or `woodshed://grab?url=<youtube url>`). Logs: `~/Library/Logs/Woodshed.log`.
+The app is a Swift `WKWebView` window (`shell/main.swift`) around a vanilla-JS player
+(`web/`) served by a small Python server (`woodshed/`), frozen with PyInstaller. Beat tracking
+is [beat_this](https://github.com/CPJKU/beat_this) exported to ONNX so the app needs no
+PyTorch; audio decoding uses macOS's own `afconvert` so it needs no ffmpeg. `CLAUDE.md` has
+the design decisions and the reasons behind them.
 
-A plain build is ad-hoc signed and only runs on the Mac that built it. To distribute, build with
-a Developer ID and notarize — `scripts/notarize.sh` has the one-time setup in its header.
+```bash
+uv run python -m woodshed --serve      # dev server at http://127.0.0.1:8377; reload picks up web/ edits
+uv run pytest                          # guard tests
+uv run python scripts/check_analysis_parity.py ~/Music/Woodshed/*.m4a   # ONNX pipeline vs PyTorch reference
+```
 
-The ONNX beat model is exported from the beat_this checkpoint by `scripts/export_beat_model.py`
-(automatic on first build); `scripts/check_analysis_parity.py` checks the NumPy/ONNX pipeline
-against the PyTorch reference. Both need the dev dependency group.
-
-Tests: `uv run pytest`.
+To distribute a build to other Macs you need an Apple Developer ID: build with
+`SIGN_IDENTITY="Developer ID Application: …" scripts/build_app.sh`, then `scripts/notarize.sh`
+(its header has the one-time setup).
 
 ## Third-party pieces
 
@@ -51,10 +91,5 @@ Tests: `uv run pytest`.
 - [beat_this](https://github.com/CPJKU/beat_this) — the beat/downbeat model; the ONNX export is built locally from its published checkpoint and is not committed here. Check the checkpoint's licence before redistributing a build.
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) and [ONNX Runtime](https://onnxruntime.ai) — bundled into the app by PyInstaller.
 
-Downloading audio from YouTube may be against its terms of service; this is a personal practice tool — use it on music you have the right to use.
-
-## Status
-
-Works on the Mac it was built on. The DMG is ad-hoc signed, so there is no download for other
-Macs yet — build from source with `scripts/build_app.sh` (Apple Silicon, Xcode command line
-tools and [uv](https://docs.astral.sh/uv/)). MIT licensed.
+Downloading audio from YouTube may be against its terms of service; use this on music you
+have the right to use.
