@@ -1,3 +1,6 @@
+
+
+
 # Woodshed
 
 A Mac app for learning songs by ear. Press one hotkey while Spotify is playing — or paste a
@@ -7,6 +10,8 @@ YouTube link — and the song opens in a player that has already found its beats
 - **loop a section** with the loop points snapped exactly to the grid;
 - **slow it down** without changing pitch;
 - **label the timeline in Nashville numbers** — `1`, `4`, `6m`, `b7` — as you work the chords out.
+
+- https://github.com/user-attachments/assets/ef98b5eb-5473-47bf-9f32-55c4528c6f7f
 
 No projects, no Save button. Everything autosaves next to the audio. It is deliberately not a
 DAW: hands stay on the instrument.
