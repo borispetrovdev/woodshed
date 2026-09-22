@@ -6,7 +6,7 @@
 A Mac app for learning songs by ear. Press one hotkey while Spotify is playing — or paste a
 YouTube link — and the song opens in a player that has already found its beats and bars. Then:
 
-- **step back** a beat, a bar, or a transient — no seek handle;
+- **step back** a beat, a bar, or a transient — all using keyboard shortcuts, no fiddling with a seek bar;
 - **loop a section** with the loop points snapped exactly to the grid;
 - **slow it down** without changing pitch;
 - **label the timeline in Nashville numbers** — `1`, `4`, `6m`, `b7` — as you work the chords out.
